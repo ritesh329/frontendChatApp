@@ -1,50 +1,47 @@
-export function truncate(str, n) {
-  return !str ? '' : (str.length > n ? str.slice(0, n) + '…' : str);
+// Extracts a stable string id whether given a raw id, a populated object,
+// or something already normalized.
+export function getId(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return String(value._id || value.id || '') || null;
 }
 
-export function formatTime(ts) {
-  if (!ts) return '';
-  const d = new Date(ts);
+// Given a personal chat's participants array + "my" id, returns the id of
+// the other participant.
+export function getOtherParticipantId(chat, myId) {
+  if (!chat?.participants) return null;
+  const other = chat.participants.find((p) => getId(p) !== myId);
+  return other ? getId(other) : null;
+}
+
+export function truncate(str, len = 40) {
+  if (!str) return '';
+  return str.length > len ? str.slice(0, len).trimEnd() + '…' : str;
+}
+
+export function formatTime(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatFileSize(bytes) {
-  if (!bytes) return '';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = bytes;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-  return size.toFixed(1) + ' ' + units[unitIndex];
+  if (bytes === null || bytes === undefined) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-export function getId(x) {
-  if (!x) return null;
-  return typeof x === 'object' ? x._id || x.id : x;
-}
-
-/**
- * Guess a media "kind" (image/video/audio/file) from a bare URL string.
- * This covers cases where a message arrives with only `content` set to a
- * file URL (e.g. via a socket echo) but without the proper `type`/`fileUrl`
- * fields, so we can still render it as media instead of raw text.
- */
+// Best-effort guess of media kind from a bare URL, used when a socket
+// echo only carries the raw link in `content` with no file metadata.
 export function guessMediaKindFromUrl(url) {
-  if (!url || typeof url !== 'string') return null;
-  const trimmed = url.trim();
-  if (!/^https?:\/\//i.test(trimmed) && !trimmed.startsWith('/')) return null;
-  const clean = trimmed.split('?')[0].toLowerCase();
-  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(clean)) return 'image';
-  if (/\.(mp4|webm|mov|avi|mkv|m4v)$/.test(clean)) return 'video';
-  if (/\.(mp3|wav|m4a|aac|flac|ogg)$/.test(clean)) return 'audio';
+  if (typeof url !== 'string') return null;
+  const clean = url.trim();
+  if (!/^https?:\/\//i.test(clean)) return null;
+  if (/\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(clean)) return 'image';
+  if (/\.(mp4|webm|mov|avi|mkv)(\?.*)?$/i.test(clean)) return 'video';
+  if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(clean)) return 'audio';
   return null;
-}
-
-/** Find the "other" participant's id in a personal chat (not me). */
-export function getOtherParticipantId(chat, meId) {
-  if (!chat?.participants) return null;
-  const other = chat.participants.find((p) => getId(p) !== meId);
-  return other ? getId(other) : null;
 }
