@@ -963,10 +963,31 @@ export default function App() {
     setGroups(data.groups || data.data || data || []);
   };
 
-  const fetchMessages = async (chatId) => {
-    const { data } = await api.get(`/chat/${chatId}/messages`);
-    setMessages(data.messages || data.data || data || []);
-  };
+  // const fetchMessages = async (chatId) => {
+  //   const { data } = await api.get(`/chat/${chatId}/messages`);
+  //   setMessages(data.messages || data.data || data || []);
+  // };
+
+  const fetchMessages = async (chatId, type) => {
+  try {
+    const endpoint =
+      type === 'group'
+        ? `/group/${chatId}/messages`
+        : `/chat/${chatId}/messages`;
+
+    const { data } = await api.get(endpoint);
+
+    setMessages(
+      data.messages ||
+      data.data ||
+      data ||
+      []
+    );
+  } catch (error) {
+    console.error('Fetch messages error:', error);
+    setMessages([]);
+  }
+};
 
   const createPersonalChat = async (otherUserId) => {
     const { data } = await api.post('/chat/personal', { userId: otherUserId });
@@ -1402,24 +1423,54 @@ export default function App() {
     }
   };
 
-  const openChat = async (type, item) => {
-    const chat = {
-      type,
-      id: item._id,
-      title: type === 'personal' ? otherUserName(item) : item.name,
-      aiMode: item.aiMode,
-      isAI: false,
-      otherUserId: type === 'personal' ? getOtherParticipantId(item, getId(meRef.current)) : null,
-    };
-    setActiveChat(chat);
-    setMessages([]);
-    setReplyTo(null);
-    setTypingText('');
-    setSuggestedEmoji(null);
-    if (type === 'group') socketRef.current?.emit('join-group', { groupId: item._id });
-    await fetchMessages(item._id);
+  // const openChat = async (type, item) => {
+  //   const chat = {
+  //     type,
+  //     id: item._id,
+  //     title: type === 'personal' ? otherUserName(item) : item.name,
+  //     aiMode: item.aiMode,
+  //     isAI: false,
+  //     otherUserId: type === 'personal' ? getOtherParticipantId(item, getId(meRef.current)) : null,
+  //   };
+  //   setActiveChat(chat);
+  //   setMessages([]);
+  //   setReplyTo(null);
+  //   setTypingText('');
+  //   setSuggestedEmoji(null);
+  //   if (type === 'group') socketRef.current?.emit('join-group', { groupId: item._id });
+  //   await fetchMessages(item._id);
+  // };
+
+   const openChat = async (type, item) => {
+  const chat = {
+    type,
+    id: item._id,
+    title: type === 'personal' ? otherUserName(item) : item.name,
+    aiMode: item.aiMode,
+    isAI: false,
+    otherUserId:
+      type === 'personal'
+        ? getOtherParticipantId(
+            item,
+            getId(meRef.current)
+          )
+        : null,
   };
 
+  setActiveChat(chat);
+  setMessages([]);
+  setReplyTo(null);
+  setTypingText('');
+  setSuggestedEmoji(null);
+
+  if (type === 'group') {
+    socketRef.current?.emit('join-group', {
+      groupId: item._id,
+    });
+  }
+
+  await fetchMessages(item._id, type);
+};
   const openAIChat = () => {
     setActiveChat({ id: 'ai-chat', title: 'Nova AI', type: 'personal', isAI: true });
     setMessages([
