@@ -417,13 +417,24 @@ export default function MessageItem({ m, me, onEdit, onDelete, onReply, onMarkRe
   return (
     <div className={`flex max-w-[85%] flex-col sm:max-w-[75%] ${isMineAligned ? 'ml-auto items-end' : 'items-start'}`}>
       {!mine && !isAI && <div className="mb-0.5 ml-2 text-[11px] text-[#999]">{m.sender?.username || 'User'}</div>}
-      {isAI && <div className="mb-0.5 ml-2 text-[11px] text-[#999]">🤖 Nova AI</div>}
-
+     {isAI && (
+  <div className="mb-0.5 ml-2 text-[11px] text-[#999]">
+    {m.reactionMode === 'roast' ? (
+      <>🔥 Roast · triggered by <span className="text-[#ccc]">{m.sender?.username || 'someone'}</span></>
+    ) : m.reactionMode === 'compliment' ? (
+      <>💚 Compliment · triggered by <span className="text-[#ccc]">{m.sender?.username || 'someone'}</span></>
+    ) : (
+      <>🤖 Nova AI{m.sender?.username ? <> · requested by <span className="text-[#ccc]">{m.sender.username}</span></> : ''}</>
+    )}
+  </div>
+)}
       <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm [word-wrap:break-word] [overflow-wrap:anywhere] ${bubbleClasses} ${mine ? 'rounded-br-sm' : 'rounded-bl-sm'}`}>
-        {m.replyTo && m.replyTo.content && (
-          <div className="mb-1 border-l-2 border-current pl-2 text-xs opacity-70">{truncate(m.replyTo.content, 60)}</div>
-        )}
-
+       {m.replyTo && m.replyTo.content && (
+  <div className="mb-1 border-l-2 border-current pl-2 text-xs opacity-70">
+    {isAI ? `Re: ${m.replyTo.sender?.username || 'message'} — ` : ''}
+    {truncate(m.replyTo.content, 60)}
+  </div>
+)}
         {m.isDeleted ? (
           <span className="italic opacity-60">This message was deleted</span>
         ) : isFileMsg ? (

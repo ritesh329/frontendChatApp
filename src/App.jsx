@@ -1346,15 +1346,29 @@ export default function App() {
       }
     });
 
-    socket.on('typing-indicator', ({ userId, isTyping }) => {
-      if (userId === getId(meRef.current)) return;
-      setTypingText(isTyping ? 'typing...' : '');
-    });
+    // socket.on('typing-indicator', ({ userId, isTyping }) => {
+    //   if (userId === getId(meRef.current)) return;
+    //   setTypingText(isTyping ? 'typing...' : '');
+    // });
 
-    socket.on('group-typing-indicator', ({ userId, isTyping }) => {
-      if (userId === getId(meRef.current)) return;
-      setTypingText(isTyping ? 'someone is typing...' : '');
-    });
+    // socket.on('group-typing-indicator', ({ userId, isTyping }) => {
+    //   if (userId === getId(meRef.current)) return;
+    //   setTypingText(isTyping ? 'someone is typing...' : '');
+    // });
+
+    socket.on('typing-indicator', ({ userId, isTyping, chatId }) => {
+  if (userId === getId(meRef.current)) return;
+  const chat = activeChatRef.current;
+  if (!chat || chat.type !== 'personal' || chat.id !== chatId) return;
+  setTypingText(isTyping ? 'typing...' : '');
+});
+
+socket.on('group-typing-indicator', ({ userId, isTyping, groupId }) => {
+  if (userId === getId(meRef.current)) return;
+  const chat = activeChatRef.current;
+  if (!chat || chat.type !== 'group' || chat.id !== groupId) return;
+  setTypingText(isTyping ? 'someone is typing...' : '');
+});
 
     socket.on('ai-response', ({ message }) => {
       if (activeChatRef.current?.isAI) {
